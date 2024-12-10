@@ -15,6 +15,7 @@
       color: #fff;
       font-family: Arial, sans-serif;
       height: 100vh;
+      overflow: hidden;
     }
     canvas {
       display: block;
@@ -45,69 +46,69 @@
     const ctx = canvas.getContext('2d');
     const saveButton = document.getElementById('saveFrame');
 
-    // Set up canvas size
+    // Ajustar tamanho do canvas
     canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight * 0.8;
+    canvas.height = window.innerHeight;
 
-    // Load the logo image
+    // Carregar o logotipo
     const logoImage = new Image();
-    logoImage.src = 'https://i.imgur.com/UBMTydI.png'; // Replace with the actual logo path
+    logoImage.src = 'https://i.imgur.com/UBMTydI.png'; // URL externo do logotipo
+    logoImage.onload = () => {
+      // Iniciar vídeo após o logotipo carregar
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then((stream) => {
+          const video = document.createElement('video');
+          video.srcObject = stream;
+          video.play();
 
-    // Access the user's camera
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then((stream) => {
-        const video = document.createElement('video');
-        video.srcObject = stream;
-        video.play();
+          video.addEventListener('loadeddata', () => {
+            function renderFrame() {
+              // Desenhar o vídeo no canvas
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-        video.addEventListener('loadeddata', () => {
-          function renderFrame() {
-            // Draw video frame on the canvas
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              // Obter os dados do vídeo
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const data = imageData.data;
 
-            // Get image data from the canvas
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const data = imageData.data;
+              // Limpar o canvas
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Clear the canvas
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
+              // Configuração para processar a imagem
+              const logoSize = 20; // Tamanho do logotipo
+              for (let y = 0; y < canvas.height; y += logoSize) {
+                for (let x = 0; x < canvas.width; x += logoSize) {
+                  const i = (y * canvas.width + x) * 4;
+                  const r = data[i];
+                  const g = data[i + 1];
+                  const b = data[i + 2];
 
-            // Process pixels and draw logos
-            const logoSize = 20; // Size of each logo
-            for (let y = 0; y < canvas.height; y += logoSize) {
-              for (let x = 0; x < canvas.width; x += logoSize) {
-                const i = (y * canvas.width + x) * 4;
-                const r = data[i];
-                const g = data[i + 1];
-                const b = data[i + 2];
+                  // Calcular a luminosidade e ajustar o tom de azul
+                  const brightness = (r + g + b) / 3;
+                  const blueTone = Math.floor((brightness / 255) * 200);
 
-                // Calculate brightness and map to blue tones
-                const brightness = (r + g + b) / 3;
-                const blueTone = Math.floor((brightness / 255) * 200); // Map brightness to a blue scale
-
-                // Draw the logo with adjusted color
-                ctx.fillStyle = `rgb(0, 0, ${blueTone})`;
-                ctx.drawImage(logoImage, x, y, logoSize, logoSize);
+                  // Definir a cor e desenhar o logotipo
+                  ctx.globalAlpha = 1 - (brightness / 255); // Transparência para ajuste visual
+                  ctx.drawImage(logoImage, x, y, logoSize, logoSize);
+                }
               }
+
+              requestAnimationFrame(renderFrame);
             }
+            renderFrame();
+          });
 
-            requestAnimationFrame(renderFrame);
-          }
-          renderFrame();
+          saveButton.addEventListener('click', () => {
+            const link = document.createElement('a');
+            link.download = 'art_frame.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+          });
+        })
+        .catch((error) => {
+          console.error('Erro ao acessar a câmera:', error);
+          alert('Não foi possível acessar a câmera. Verifique as permissões.');
         });
-
-        // Save frame functionality
-        saveButton.addEventListener('click', () => {
-          const link = document.createElement('a');
-          link.download = 'art_frame.png';
-          link.href = canvas.toDataURL('image/png');
-          link.click();
-        });
-      })
-      .catch((error) => {
-        console.error('Camera access error:', error);
-        alert('Unable to access camera.');
-      });
+    };
   </script>
 </body>
 </html>
