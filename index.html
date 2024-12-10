@@ -8,6 +8,8 @@
       html, body {
         margin: 0;
         padding: 0;
+        background: #000;
+        overflow: hidden;
       }
       canvas {
         display: block;
@@ -16,8 +18,7 @@
     <script>
       let video;
       let logoImage;
-      const FONT_SIZE = 16; // Tamanho do logotipo (em pixels).
-      const ASPECT_RATIO = 2; // Proporção aproximada de largura/altura de um caractere.
+      const LOGO_SIZE = 16; // Tamanho do logotipo em pixels.
 
       function preload() {
         // Carregar o logotipo antes de iniciar
@@ -27,39 +28,37 @@
       function setup() {
         createCanvas(windowWidth, windowHeight); // Criar canvas de tela cheia.
         video = createCapture(VIDEO); // Capturar vídeo.
-        video.size(floor(width / FONT_SIZE), floor(height / FONT_SIZE)); // Ajustar resolução do vídeo para combinar com a grade.
+        video.size(floor(width / LOGO_SIZE), floor(height / LOGO_SIZE)); // Ajustar resolução do vídeo para combinar com a grade.
         video.hide(); // Esconder o elemento de vídeo.
-        noLoop(); // Evitar que o draw seja executado automaticamente.
+        noLoop(); // Desenhar manualmente (somente quando `draw` for chamado explicitamente).
       }
 
       function draw() {
         background(0); // Fundo preto.
         video.loadPixels(); // Carregar os pixels do vídeo.
 
-        // Percorrer os pixels e desenhar o logotipo correspondente
-        for (let y = 0; y < video.height; y++) {
-          for (let x = 0; x < video.width; x++) {
-            const index = (x + y * video.width) * 4;
-            const r = video.pixels[index + 0]; // Vermelho.
-            const g = video.pixels[index + 1]; // Verde.
-            const b = video.pixels[index + 2]; // Azul.
-            const avg = (r + g + b) / 3; // Média do brilho.
+        if (video.pixels.length > 0) { // Verificar se os pixels do vídeo estão carregados.
+          for (let y = 0; y < video.height; y++) {
+            for (let x = 0; x < video.width; x++) {
+              const index = (x + y * video.width) * 4;
+              const r = video.pixels[index + 0]; // Vermelho.
+              const g = video.pixels[index + 1]; // Verde.
+              const b = video.pixels[index + 2]; // Azul.
+              const avg = (r + g + b) / 3; // Média do brilho.
 
-            // Mapeamento da tonalidade para opacidade
-            const opacity = map(avg, 0, 255, 0.2, 1); // Tonalidade mais escura -> mais opaca.
-
-            // Ajustar posição e tamanho do logotipo
-            push();
-            translate(x * FONT_SIZE, y * FONT_SIZE); // Posição do logotipo.
-            tint(255, opacity * 255); // Ajustar a opacidade do logotipo.
-            image(logoImage, 0, 0, FONT_SIZE, FONT_SIZE); // Desenhar o logotipo.
-            pop();
+              // Ajustar a opacidade do logotipo com base na tonalidade
+              push();
+              const brightness = map(avg, 0, 255, 0.2, 1); // Mapear brilho para opacidade.
+              tint(255, brightness * 255); // Ajustar a opacidade do logotipo.
+              image(logoImage, x * LOGO_SIZE, y * LOGO_SIZE, LOGO_SIZE, LOGO_SIZE); // Renderizar o logotipo.
+              pop();
+            }
           }
         }
       }
 
       function mousePressed() {
-        redraw(); // Redesenhar apenas quando o mouse for pressionado.
+        redraw(); // Atualizar a tela ao clicar com o mouse.
       }
     </script>
 </head>
