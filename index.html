@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Logo Art Web App</title>
+  <title>Logo Art Video Capture</title>
   <style>
     body {
       margin: 0;
@@ -52,62 +52,66 @@
 
     // Carregar o logotipo
     const logoImage = new Image();
-    logoImage.src = 'https://i.imgur.com/UBMTydI.png'; // URL externo do logotipo
-    logoImage.onload = () => {
-      // Iniciar vídeo após o logotipo carregar
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then((stream) => {
-          const video = document.createElement('video');
-          video.srcObject = stream;
-          video.play();
+    logoImage.src = 'https://i.imgur.com/UBMTydI.png'; // URL do logotipo
 
-          video.addEventListener('loadeddata', () => {
-            function renderFrame() {
-              // Desenhar o vídeo no canvas
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    // Configuração da câmera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
 
-              // Obter os dados do vídeo
-              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              const data = imageData.data;
+        video.addEventListener('loadeddata', () => {
+          function renderFrame() {
+            // Desenhar o vídeo no canvas (para capturar dados do frame)
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-              // Limpar o canvas
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
+            // Obter dados de imagem
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
 
-              // Configuração para processar a imagem
-              const logoSize = 30; // Tamanho do logotipo
-              for (let y = 0; y < canvas.height; y += logoSize) {
-                for (let x = 0; x < canvas.width; x += logoSize) {
-                  const i = (y * canvas.width + x) * 4;
-                  const r = data[i];
-                  const g = data[i + 1];
-                  const b = data[i + 2];
+            // Limpar o canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                  // Calcular a luminosidade e ajustar o tom de azul
-                  const brightness = (r + g + b) / 3;
+            // Configuração do logotipo
+            const logoSize = 20; // Tamanho de cada logotipo
+            for (let y = 0; y < canvas.height; y += logoSize) {
+              for (let x = 0; x < canvas.width; x += logoSize) {
+                const i = ((y * canvas.width) + x) * 4;
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
 
-                  // Adaptação de tonalidade para logotipo
-                  ctx.globalAlpha = 1 - (brightness / 255); // Define opacidade com base na luminosidade
-                  ctx.drawImage(logoImage, x, y, logoSize, logoSize);
-                }
+                // Calcular a luminosidade para mapear a cor
+                const brightness = (r + g + b) / 3;
+
+                // Ajustar opacidade com base na luminosidade
+                const alpha = brightness / 255;
+
+                ctx.globalAlpha = alpha; // Define transparência do logotipo
+                ctx.drawImage(logoImage, x, y, logoSize, logoSize);
               }
-
-              requestAnimationFrame(renderFrame);
             }
-            renderFrame();
-          });
 
-          saveButton.addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.download = 'art_frame.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-          });
-        })
-        .catch((error) => {
-          console.error('Erro ao acessar a câmera:', error);
-          alert('Não foi possível acessar a câmera. Verifique as permissões.');
+            // Repetir a renderização
+            requestAnimationFrame(renderFrame);
+          }
+          renderFrame();
         });
-    };
+
+        // Função para salvar um frame como imagem
+        saveButton.addEventListener('click', () => {
+          const link = document.createElement('a');
+          link.download = 'art_frame.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        });
+      })
+      .catch((error) => {
+        console.error('Erro ao acessar a câmera:', error);
+        alert('Não foi possível acessar a câmera. Verifique as permissões.');
+      });
   </script>
 </body>
 </html>
+
