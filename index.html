@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Logo Art Web App</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      height: 100vh;
+    }
+    canvas {
+      display: block;
+      max-width: 100%;
+      border: 2px solid #fff;
+    }
+    button {
+      margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      border: none;
+      background: #007bff;
+      color: white;
+      cursor: pointer;
+      border-radius: 5px;
+    }
+    button:hover {
+      background: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="artCanvas"></canvas>
+  <button id="saveFrame">Save Frame</button>
+
+  <script>
+    const canvas = document.getElementById('artCanvas');
+    const ctx = canvas.getContext('2d');
+    const saveButton = document.getElementById('saveFrame');
+
+    // Set up canvas size
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight * 0.8;
+
+    // Load the logo image
+    const logoImage = new Image();
+    logoImage.src = 'https://i.imgur.com/UBMTydI.png'; // Replace with the actual logo path
+
+    // Access the user's camera
+    navigator.mediaDevices.getUserMedia({ video: true })
+      .then((stream) => {
+        const video = document.createElement('video');
+        video.srcObject = stream;
+        video.play();
+
+        video.addEventListener('loadeddata', () => {
+          function renderFrame() {
+            // Draw video frame on the canvas
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // Get image data from the canvas
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data = imageData.data;
+
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Process pixels and draw logos
+            const logoSize = 20; // Size of each logo
+            for (let y = 0; y < canvas.height; y += logoSize) {
+              for (let x = 0; x < canvas.width; x += logoSize) {
+                const i = (y * canvas.width + x) * 4;
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+
+                // Calculate brightness and map to blue tones
+                const brightness = (r + g + b) / 3;
+                const blueTone = Math.floor((brightness / 255) * 200); // Map brightness to a blue scale
+
+                // Draw the logo with adjusted color
+                ctx.fillStyle = `rgb(0, 0, ${blueTone})`;
+                ctx.drawImage(logoImage, x, y, logoSize, logoSize);
+              }
+            }
+
+            requestAnimationFrame(renderFrame);
+          }
+          renderFrame();
+        });
+
+        // Save frame functionality
+        saveButton.addEventListener('click', () => {
+          const link = document.createElement('a');
+          link.download = 'art_frame.png';
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        });
+      })
+      .catch((error) => {
+        console.error('Camera access error:', error);
+        alert('Unable to access camera.');
+      });
+  </script>
+</body>
+</html>
