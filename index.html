@@ -1,117 +1,68 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Logo Art Video Generator</title>
-  <style>
-    body {
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      background: #000;
-      color: #fff;
-      font-family: Arial, sans-serif;
-      height: 100vh;
-      overflow: hidden;
-    }
-    canvas {
-      display: block;
-      max-width: 100%;
-      border: 2px solid #fff;
-    }
-    button {
-      margin-top: 10px;
-      padding: 10px 20px;
-      font-size: 16px;
-      border: none;
-      background: #007bff;
-      color: white;
-      cursor: pointer;
-      border-radius: 5px;
-    }
-    button:hover {
-      background: #0056b3;
-    }
-  </style>
+    <title>YOU by Reiniscouple</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.11.1/p5.js"></script>
+    <meta charset="utf-8" />
+    <style>
+      html, body {
+        margin: 0;
+        padding: 0;
+      }
+      canvas {
+        display: block;
+      }
+    </style>
+    <script>
+      let video;
+      let logoImage;
+      const FONT_SIZE = 16; // Tamanho do logotipo (em pixels).
+      const ASPECT_RATIO = 2; // Proporção aproximada de largura/altura de um caractere.
+
+      function preload() {
+        // Carregar o logotipo antes de iniciar
+        logoImage = loadImage('https://i.imgur.com/UBMTydI.png'); // Substitua pelo URL do logotipo
+      }
+
+      function setup() {
+        createCanvas(windowWidth, windowHeight); // Criar canvas de tela cheia.
+        video = createCapture(VIDEO); // Capturar vídeo.
+        video.size(floor(width / FONT_SIZE), floor(height / FONT_SIZE)); // Ajustar resolução do vídeo para combinar com a grade.
+        video.hide(); // Esconder o elemento de vídeo.
+        noLoop(); // Evitar que o draw seja executado automaticamente.
+      }
+
+      function draw() {
+        background(0); // Fundo preto.
+        video.loadPixels(); // Carregar os pixels do vídeo.
+
+        // Percorrer os pixels e desenhar o logotipo correspondente
+        for (let y = 0; y < video.height; y++) {
+          for (let x = 0; x < video.width; x++) {
+            const index = (x + y * video.width) * 4;
+            const r = video.pixels[index + 0]; // Vermelho.
+            const g = video.pixels[index + 1]; // Verde.
+            const b = video.pixels[index + 2]; // Azul.
+            const avg = (r + g + b) / 3; // Média do brilho.
+
+            // Mapeamento da tonalidade para opacidade
+            const opacity = map(avg, 0, 255, 0.2, 1); // Tonalidade mais escura -> mais opaca.
+
+            // Ajustar posição e tamanho do logotipo
+            push();
+            translate(x * FONT_SIZE, y * FONT_SIZE); // Posição do logotipo.
+            tint(255, opacity * 255); // Ajustar a opacidade do logotipo.
+            image(logoImage, 0, 0, FONT_SIZE, FONT_SIZE); // Desenhar o logotipo.
+            pop();
+          }
+        }
+      }
+
+      function mousePressed() {
+        redraw(); // Redesenhar apenas quando o mouse for pressionado.
+      }
+    </script>
 </head>
 <body>
-  <canvas id="artCanvas"></canvas>
-  <button id="saveFrame">Save Frame</button>
-
-  <script>
-    const canvas = document.getElementById('artCanvas');
-    const ctx = canvas.getContext('2d');
-    const saveButton = document.getElementById('saveFrame');
-
-    // Ajustar tamanho do canvas
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    // Carregar o logotipo
-    const logoImage = new Image();
-    logoImage.src = 'https://i.imgur.com/UBMTydI.png'; // URL do logotipo
-
-    logoImage.onload = () => {
-      // Configuração da câmera
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then((stream) => {
-          const video = document.createElement('video');
-          video.srcObject = stream;
-          video.play();
-
-          video.addEventListener('loadeddata', () => {
-            function renderFrame() {
-              // Desenhar o vídeo no canvas (escondido) para obter os dados de pixels
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-              // Obter os dados do frame do vídeo
-              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              const data = imageData.data;
-
-              // Limpar o canvas para desenhar a transformação
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-              // Configuração para a arte com logotipos
-              const logoSize = 20; // Tamanho do logotipo
-              for (let y = 0; y < canvas.height; y += logoSize) {
-                for (let x = 0; x < canvas.width; x += logoSize) {
-                  const i = ((y * canvas.width) + x) * 4;
-                  const r = data[i];
-                  const g = data[i + 1];
-                  const b = data[i + 2];
-
-                  // Calcular a luminosidade para ajustar a opacidade
-                  const brightness = (r + g + b) / 3;
-
-                  // Adaptação para tonalidade
-                  ctx.globalAlpha = brightness / 255;
-
-                  // Desenhar o logotipo
-                  ctx.drawImage(logoImage, x, y, logoSize, logoSize);
-                }
-              }
-
-              // Chamar a próxima animação
-              requestAnimationFrame(renderFrame);
-            }
-            renderFrame();
-          });
-
-          saveButton.addEventListener('click', () => {
-            const link = document.createElement('a');
-            link.download = 'art_frame.png';
-            link.href = canvas.toDataURL('image/png');
-            link.click();
-          });
-        })
-        .catch((error) => {
-          console.error('Erro ao acessar a câmera:', error);
-          alert('Não foi possível acessar a câmera. Verifique as permissões.');
-        });
-    };
-  </script>
 </body>
 </html>
