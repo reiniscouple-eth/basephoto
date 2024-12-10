@@ -74,7 +74,7 @@
               ctx.clearRect(0, 0, canvas.width, canvas.height);
 
               // Configuração para processar a imagem
-              const logoSize = 20; // Tamanho do logotipo
+              const logoSize = 30; // Tamanho do logotipo
               for (let y = 0; y < canvas.height; y += logoSize) {
                 for (let x = 0; x < canvas.width; x += logoSize) {
                   const i = (y * canvas.width + x) * 4;
@@ -84,10 +84,9 @@
 
                   // Calcular a luminosidade e ajustar o tom de azul
                   const brightness = (r + g + b) / 3;
-                  const blueTone = Math.floor((brightness / 255) * 200);
 
-                  // Definir a cor e desenhar o logotipo
-                  ctx.globalAlpha = 1 - (brightness / 255); // Transparência para ajuste visual
+                  // Adaptação de tonalidade para logotipo
+                  ctx.globalAlpha = 1 - (brightness / 255); // Define opacidade com base na luminosidade
                   ctx.drawImage(logoImage, x, y, logoSize, logoSize);
                 }
               }
